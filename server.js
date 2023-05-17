@@ -114,7 +114,7 @@ async function checkUserSignIn(account, password, is_user) {
 }
 
 async function DeleteUser(username) {
-    const query1 = `SELECT * FROM users WHERE username = ? ALLOW FILTERING`;
+    const query1 = `SELECT * FROM users WHERE username = ?;`;
     const params1 = [username];
     const result1 = await client.execute(query1, params1, { prepare: true });
 
