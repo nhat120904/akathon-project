@@ -3,13 +3,11 @@ const cassandra = require("cassandra-driver");
 const bodyParser = require("body-parser");
 const { Worker } = require("worker_threads");
 const runWorkerThread = require("./worker");
-// const cors = require('cors');
 const jwt = require("jsonwebtoken");
 const app = express();
 const PORT = 3000;
 app.use(express.json());
 app.use(express.static("public"));
-// app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.disable("x-powered-by");
@@ -117,13 +115,11 @@ async function checkUserSignIn(account, password, is_user) {
 
 async function DeleteUser(username) {
     const query1 = `SELECT * FROM users WHERE username = ? ALLOW FILTERING`;
-    const params1 = [username];a
+    const params1 = [username];
     const result1 = await client.execute(query1, params1, { prepare: true });
 
     // console.log(result1)
     if (result1.rowLength === 0) {
-        // throw new Error(`User '${username}' not found`);
-        console.log("hihi");
         return { result: false };
     }
     const user_id = result1.rows[0].user_id;
@@ -240,7 +236,7 @@ async function startServer() {
                 console.error(err);
                 res.json({
                     result: false,
-                    code: 69, // cái này để sau
+                    code: 3,
                 });
             } else {
                 res.json({
@@ -266,7 +262,7 @@ async function startServer() {
                 console.error(err);
                 res.json({
                     result: false,
-                    code: 69, // cái này để sau
+                    code: 3,
                 });
             } else {
                 res.json({
@@ -287,7 +283,7 @@ async function startServer() {
                 console.error(err);
                 res.json({
                     result: false,
-                    code: 69, // cái này để sau
+                    code: 3,
                 });
             } else {
                 res.json({
@@ -308,7 +304,7 @@ async function startServer() {
             console.error(e);
             res.json({
                 result: false,
-                code: 69, // cái này để sau
+                code: 3,
             });
         }
         function part2(games) {
@@ -333,7 +329,7 @@ async function startServer() {
                             console.error(err);
                             res.json({
                                 result: false,
-                                code: 69, // cái này để sau
+                                code: 3,
                             });
                         } else {
                             res.json({
@@ -358,7 +354,7 @@ async function startServer() {
                 console.error(err);
                 res.json({
                     result: false,
-                    code: 69, // cái này để sau
+                    code: 3,
                 });
             } else {
                 res.json({
@@ -379,7 +375,7 @@ async function startServer() {
                 console.error(err);
                 res.json({
                     result: false,
-                    code: 69, // cái này để sau
+                    code: 3,
                 });
             } else {
                 res.json({
@@ -390,7 +386,6 @@ async function startServer() {
         });
     });
 
-    // var comment_id = 0;
     // add review
     app.post("/games/:game_id/reviews", verifyToken, async (req, res) => {
         const rating = req.body.rating;
@@ -403,9 +398,6 @@ async function startServer() {
         });
         const data2 = await data2_async;
         let comments = data2.rows[0]["system.max(comment_id)"];
-        // console.log(rating);
-        // console.log(review);
-        // console.log(user_id);
         let comment_id = parseInt(comments);
         comment_id = comment_id.toString() === "NaN" ? 1 : comment_id + 1;
 
@@ -432,7 +424,6 @@ async function startServer() {
     app.get("/games/:game_id/reviews", (req, res) => {
         const { game_id } = req.params;
         let comment_id = req.query.comment_id;
-        // console.log(comment_id);
         if (comment_id === undefined) {
             comment_id = 0;
         }
@@ -446,7 +437,6 @@ async function startServer() {
                 res.status(200).json({
                     result: true,
                     data: result.rows,
-                    // data2: res
                 });
             })
             .catch((e) => {
@@ -479,6 +469,7 @@ async function startServer() {
             });
     });
 
+    //get user info
     app.get("/user", verifyToken, (req, res) => {
         const query = `SELECT firstname, lastname, address, email, phone, games, username FROM users WHERE user_id = ${req.cookies.user_id};`;
         client.execute(query, { prepare: true }, (err, result) => {
@@ -514,6 +505,7 @@ async function startServer() {
         });
     });
 
+    //sign up
     app.post("/signup", async (req, res) => {
         const user_id = uuidv4();
         const firstname = req.body.firstname;
@@ -545,17 +537,17 @@ async function startServer() {
                     { prepare: true }
                 )
                 .then(() => {
-                    const maxAge = 3 * 60 * 60;
+                    const maxAge = 6 * 60 * 60;
                     const token = jwt.sign({ username }, jwtSecret, {
-                        expiresIn: maxAge, // 3hrs in sec
+                        expiresIn: maxAge, // 6hrs in sec
                     });
                     res.cookie("jwt", token, {
                         httpOnly: true,
-                        maxAge: maxAge * 1000, // 3hrs in ms
+                        maxAge: maxAge * 1000, // 6hrs in ms
                     });
                     res.cookie("user_id", user_id, {
                         httpOnly: true,
-                        maxAge: maxAge * 1000, // 3hrs in ms
+                        maxAge: maxAge * 1000, // 6hrs in ms
                     });
                     res.status(200).json({ result: true, data: user_id });
                 })
@@ -582,6 +574,7 @@ async function startServer() {
         }
     });
 
+    //sign in
     app.post("/signin", async (req, res) => {
         const is_user = req.body.is_username;
         const password = req.body.password;
@@ -598,17 +591,17 @@ async function startServer() {
             const is_admin = userExists.data.is_admin;
             console.log(user_id);
             const username = userExists.data.username;
-            const maxAge = 3 * 60 * 60;
+            const maxAge = 6 * 60 * 60;
             const token = jwt.sign({ username }, jwtSecret, {
-                expiresIn: maxAge, // 3hrs in sec
+                expiresIn: maxAge, // 6hrs in sec
             });
             res.cookie("jwt", token, {
                 httpOnly: true,
-                maxAge: maxAge * 1000, // 3hrs in ms
+                maxAge: maxAge * 1000, // 6hrs in ms
             });
             res.cookie("user_id", user_id, {
                 httpOnly: true,
-                maxAge: maxAge * 1000, // 3hrs in ms
+                maxAge: maxAge * 1000, // 6hrs in ms
             });
             res.status(201).json({
                 result: true,
@@ -624,6 +617,7 @@ async function startServer() {
         }
     });
 
+    //admin
     app.post("/admin", async (req, res) => {
         const user_name = req.body.user_name;
         const admin = true;
@@ -692,6 +686,7 @@ async function startServer() {
         }
     });
 
+    // sign out
     app.post("/signout", async (req, res) => {
         const token = req.cookies.jwt;
         const user_id = req.cookies.user_id;
@@ -709,8 +704,8 @@ async function startServer() {
         }
     });
 
+    //payments
     app.post("/order", verifyToken, async (req, res) => {
-        // console.log(req.cookies.jwt);
         const cardName = req.body.data.card_name;
         const cardNumber = req.body.data.card_number;
         const cardType = req.body.data.typeof_card;
@@ -749,7 +744,7 @@ async function startServer() {
             if (exist === false) {
                 res.json({
                     result: false,
-                    code: 2, // lỗi server
+                    code: 2,
                 });
             } else {
                 exist = exist === null ? [] : exist;
@@ -770,7 +765,6 @@ async function startServer() {
                             console.log("data received");
                             res.json({
                                 result: true,
-                                // data: result.rows
                             });
                         }
                     }
@@ -791,6 +785,7 @@ async function startServer() {
         }
     });
 
+    //statistics
     app.get("/statistics", async (req, res) => {
         const query1 = "SELECT COUNT(*) FROM users";
         const query2 = "SELECT COUNT(*) FROM game_reviews";
@@ -856,10 +851,9 @@ async function startServer() {
         });
     });
 
+    //games search
     app.post("/searching", async (req, res) => {
-        // console.log(array);
         const data = req.body.data;
-        // console.log("data:", data);
         try {
             if (data.length === 2) {
                 var name = data[0].value;
